@@ -1,0 +1,66 @@
+#!/bin/bash -eu
+
+CURDIR=$(dirname $0)
+
+# TODO(sgotti): vendor
+go get github.com/appc/spec/...
+go get github.com/sgotti/acibuilder
+
+export GOBIN=${CURDIR}/bin
+
+echo "Building sharelibs helper..."
+go build -o ${GOBIN}/sharedlibs ${CURDIR}/helpers/sharedlibs/
+RET=$?
+[ $RET -ne 0 ] && echo "build failed" && exit 1
+
+echo "Building bacibuilder..."
+BACIBUILDER=${GOBIN}/bacibuilder
+CGO_ENABLED=0 go build -o ${BACIBUILDER} -a -installsuffix cgo -ldflags '-extldflags "-static" -s' ${CURDIR}/builder/
+RET=$?
+[ $RET -ne 0 ] && echo "build failed" && exit 1
+
+XZ=$(which xz)
+if [ -n $XZ ]; then
+	XZ_SHAREDLIBS=$(${GOBIN}/sharedlibs $XZ)
+else
+	echo "warning: cannot find xz binary, baci will not be able to extract tar.xz files"
+fi
+
+echo "Building baci..."
+CGO_ENABLED=0 go build -o ${GOBIN}/baci ${BACI_IMAGE:+-ldflags "-X main.defaultBaciImage '${BACI_IMAGE}'"} ${CURDIR}/baci/
+RET=$?
+[ $RET -ne 0 ] && echo "build failed" && exit 1
+
+
+BACIACI=${CURDIR}/aci
+BACIDIR=${BACIACI}/rootfs/baci
+BACIROOT=${BACIDIR}/root
+
+# clean baci.aci build dir
+rm -rf ${BACIACI}
+
+mkdir -p ${BACIDIR}/source
+mkdir -p ${BACIDIR}/dest
+mkdir -p ${BACIDIR}/data
+
+mkdir -p ${BACIROOT}/usr/bin
+mkdir -p ${BACIROOT}/lib64
+
+cp ${CURDIR}/manifest ${BACIACI}
+cp ${BACIBUILDER} ${BACIROOT}/usr/bin
+
+if [ -n $XZ ]; then
+	cp $XZ ${BACIROOT}/usr/bin/
+	for lib in ${XZ_SHAREDLIBS}; do
+		cp /lib64/$lib ${BACIROOT}/lib64/
+	done
+	cp /lib64/ld-linux-x86-64.so.2 ${BACIROOT}/lib64/
+fi
+
+echo "Building actool..."
+ACTOOL=${GOBIN}/actool
+go build -o ${ACTOOL} github.com/appc/spec/actool
+
+${ACTOOL} build --overwrite ${CURDIR}/aci ${GOBIN}/baci.aci
+
+

@@ -1,0 +1,43 @@
+{
+    "acKind": "ImageManifest",
+    "acVersion": "0.3.0",
+    "name": "sgotti.org/baci",
+    "labels": [
+        {
+            "name": "version",
+            "value": "0.0.1"
+        },
+        {
+            "name": "arch",
+            "value": "amd64"
+        },
+        {
+            "name": "os",
+            "value": "linux"
+        }
+    ],
+    "app": {
+        "exec": [
+            "/baci/root/usr/bin/bacibuilder"
+        ],
+        "user": "0",
+        "group": "0",
+        "mountPoints": [
+            {
+                "name": "source",
+                "path": "/baci/source",
+                "readOnly": true
+            },
+            {
+                "name": "dest",
+                "path": "/baci/dest",
+                "readOnly": false
+            },
+            {
+                "name": "data",
+                "path": "/baci/data",
+                "readOnly": false
+            }
+        ]
+    }
+}
