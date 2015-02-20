@@ -168,6 +168,7 @@ func main() {
 		die("error: %v", err)
 	}
 
+	log.Printf("Building the ACI...")
 	err = BuildACI(root, filepath.Join("/baci/dest/", string(outFile)), db)
 	if err != nil {
 		die("error: %v", err)
