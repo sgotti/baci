@@ -8,7 +8,7 @@ go get github.com/sgotti/acibuilder
 
 export GOBIN=${CURDIR}/bin
 
-echo "Building sharelibs helper..."
+echo "Building sharedlibs helper..."
 go build -o ${GOBIN}/sharedlibs ${CURDIR}/helpers/sharedlibs/
 RET=$?
 [ $RET -ne 0 ] && echo "build failed" && exit 1
