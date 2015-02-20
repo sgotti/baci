@@ -319,7 +319,7 @@ func (b *DockerBuilder) parseDockerFile() error {
 
 func (b *DockerBuilder) Unsupported(n *parser.Node) error {
 	command := n.Value
-	log.Printf("Command %s not supported, ignoring (this can lead to wrong behavior of the next commands)\n", command)
+	log.Printf("Command %q not supported, ignoring (this can lead to wrong behavior of the next commands)\n", command)
 	return nil
 }
 
