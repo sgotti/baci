@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"syscall"
 
@@ -18,7 +19,13 @@ import (
 )
 
 var (
-	excludePaths = [...]string{"dev", "proc", "sys", "baci"}
+	excludePaths = []*regexp.Regexp{
+		regexp.MustCompile("^dev/.+"),
+		regexp.MustCompile("^proc/.+"),
+		regexp.MustCompile("^sys/.+"),
+		regexp.MustCompile("^baci$"),
+		regexp.MustCompile("^baci/.+"),
+	}
 )
 
 func die(s string, i ...interface{}) {
@@ -38,16 +45,20 @@ type Builder interface {
 	GetPorts() ([]types.Port, error)
 }
 
-func BuildACI(root string, destfile string, b Builder) error {
-	aciBuilder := acibuilder.NewSimpleACIBuilder(root)
-	aciBuilder.SetExcludeFunc(func(path string, info os.FileInfo) (bool, error) {
+func NewExcludeFunc(exclude []*regexp.Regexp) acibuilder.ExcludeFunc {
+	return func(path string, info os.FileInfo) (bool, error) {
 		for _, excludePath := range excludePaths {
-			if strings.HasPrefix(path, excludePath) {
+			if excludePath.Match([]byte(path)) {
 				return true, nil
 			}
 		}
 		return false, nil
-	})
+	}
+}
+
+func BuildACI(root string, destfile string, b Builder) error {
+	aciBuilder := acibuilder.NewSimpleACIBuilder(root)
+	aciBuilder.SetExcludeFunc(NewExcludeFunc(excludePaths))
 
 	mode := os.O_CREATE | os.O_WRONLY | os.O_TRUNC
 	fh, err := os.OpenFile(destfile, mode, 0644)
