@@ -2,6 +2,7 @@ package main
 
 import (
 	"archive/tar"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -11,11 +12,19 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/sgotti/baci/builder/docker"
+	"github.com/sgotti/baci/builder/util"
+	"github.com/sgotti/baci/common"
+
 	"github.com/appc/spec/schema"
 	"github.com/appc/spec/schema/types"
 	"github.com/sgotti/acibuilder"
-	"github.com/sgotti/baci/builder/docker"
-	"github.com/sgotti/baci/builder/util"
+)
+
+const (
+	BaciSourceDir = "/baci/source"
+	BaciDestDir   = "/baci/dest"
+	BaciDataDir   = "/baci/data"
 )
 
 var (
@@ -56,7 +65,7 @@ func NewExcludeFunc(exclude []*regexp.Regexp) acibuilder.ExcludeFunc {
 	}
 }
 
-func BuildACI(root string, destfile string, b Builder) error {
+func BuildACI(root string, destfile string, configData *common.ConfigData, b Builder) error {
 	aciBuilder := acibuilder.NewSimpleACIBuilder(root)
 	aciBuilder.SetExcludeFunc(NewExcludeFunc(excludePaths))
 
@@ -108,7 +117,8 @@ func BuildACI(root string, destfile string, b Builder) error {
 	im := schema.ImageManifest{
 		ACKind:    types.ACKind("ImageManifest"),
 		ACVersion: schema.AppContainerVersion,
-		Name:      "test",
+		Name:      configData.AppName,
+		Labels:    configData.Labels,
 		App:       app,
 	}
 
@@ -139,9 +149,14 @@ func main() {
 	}
 	syscall.Umask(um)
 
-	outFile, err := ioutil.ReadFile("/baci/data/outimagename")
+	configDataJson, err := ioutil.ReadFile(filepath.Join(BaciDataDir, "configdata"))
 	if err != nil {
-		die("cannot read the name of the output image file: %v", err)
+		die("cannot read the configdata file: %v", err)
+	}
+	var configData common.ConfigData
+	err = json.Unmarshal(configDataJson, &configData)
+	if err != nil {
+		die("cannot unmarshal configdata: %v", err)
 	}
 
 	var root string
@@ -151,9 +166,9 @@ func main() {
 	} else {
 		root = "/"
 	}
-	sourceDir := filepath.Join(root, "/baci/source")
+	sourceDir := filepath.Join(root, BaciSourceDir)
 
-	baseACIPath := filepath.Join("/baci/data", "base.aci")
+	baseACIPath := filepath.Join(BaciDataDir, "base.aci")
 	if _, err := os.Stat(baseACIPath); err == nil {
 		log.Printf("Extracting base aci\n")
 		r, err := os.Open(baseACIPath)
@@ -170,17 +185,17 @@ func main() {
 	// Remove base.aci
 	os.Remove(baseACIPath)
 
-	db, err := docker.NewDockerBuilder(root, sourceDir)
+	builder, err := docker.NewDockerBuilder(root, sourceDir)
 	if err != nil {
 		die("error: %v", err)
 	}
-	err = db.Build()
+	err = builder.Build()
 	if err != nil {
 		die("error: %v", err)
 	}
 
 	log.Printf("Building the ACI...")
-	err = BuildACI(root, filepath.Join("/baci/dest/", string(outFile)), db)
+	err = BuildACI(root, filepath.Join(BaciDestDir, configData.OutFile), &configData, builder)
 	if err != nil {
 		die("error: %v", err)
 	}

@@ -15,6 +15,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -24,9 +25,13 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/appc/spec/discovery"
+	"github.com/appc/spec/schema/types"
+	"github.com/sgotti/baci/builder/docker"
+	"github.com/sgotti/baci/common"
+
 	"github.com/coreos/rocket/cas"
 	"github.com/jessevdk/go-flags"
-	"github.com/sgotti/baci/builder/docker"
 )
 
 var (
@@ -44,10 +49,11 @@ func init() {
 }
 
 var opts struct {
-	StoreDir    string `long:"rocketdir" description:"Cas store dir to use" default:"/var/lib/baci"`
-	RocketPath  string `long:"rocketpath" description:"Rocket executable path" required:"true"`
-	OutFilePath string `short:"o" long:"outfile" description:"The filename of the generated ACI" required:"true"`
-	Args        struct {
+	StoreDir      string `long:"rocketdir" description:"Cas store dir to use" default:"/var/lib/baci"`
+	RocketPath    string `long:"rocketpath" description:"Rocket executable path" required:"true"`
+	OutFilePath   string `short:"o" long:"outfile" description:"The filename of the generated ACI" required:"true"`
+	AppNameLabels string `short:"n" long:"name" description:"The ACI's name and labels in the format \"example.com/reduce-worker:1.0.2,os=linux,arch=amd64,anotherlabel=value\"" required:"true"`
+	Args          struct {
 		SourceDir string `positional-arg-name:"sourcedir" description:"The directory containing the build scripts (for example the Dockerfile)"`
 	} `positional-args:"true" required:"true"`
 }
@@ -90,8 +96,13 @@ func main() {
 	if err != nil {
 		die("error: %v", err)
 	}
-	outFilePath := opts.OutFilePath
 
+	App, err := discovery.NewAppFromString(opts.AppNameLabels)
+	if err != nil {
+		die("error: %v", err)
+	}
+
+	outFilePath := opts.OutFilePath
 	outDir, err := filepath.Abs(filepath.Dir(outFilePath))
 	if err != nil {
 		die("error: %v", err)
@@ -104,12 +115,12 @@ func main() {
 		die("error: %v", err)
 	}
 
-	db, err := docker.NewDockerBuilder("/", sourceDir)
+	b, err := docker.NewDockerBuilder("/", sourceDir)
 	if err != nil {
 		die("error: %v", err)
 	}
 
-	baseImage, err := db.GetBaseImage()
+	baseImage, err := b.GetBaseImage()
 	if err != nil {
 		die("error: %v", err)
 	}
@@ -151,8 +162,22 @@ func main() {
 		log.Printf("image written to %s", baseACIPath)
 	}
 
-	// Write wanted output image name
-	err = ioutil.WriteFile(filepath.Join(dataDir, "outimagename"), []byte(outFile), 0644)
+	// Write config data for the baci builder
+	labels := types.Labels{}
+	for k, v := range App.Labels {
+		name, err := types.NewACName(k)
+		if err != nil {
+			die("wrong label name: %v", err)
+		}
+		labels = append(labels, types.Label{Name: *name, Value: v})
+	}
+	configData := &common.ConfigData{
+		OutFile: outFile,
+		AppName: App.Name,
+		Labels:  labels,
+	}
+	configDataJson, err := json.Marshal(configData)
+	err = ioutil.WriteFile(filepath.Join(dataDir, "configdata"), []byte(configDataJson), 0644)
 	if err != nil {
 		die("error: %v", err)
 	}

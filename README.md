@@ -47,12 +47,13 @@ Note: the build scripts tries to get a local copy of `xz` and the needed librari
 
 Right now baci needs to be run as root.
 
-`$BACIBIN/baci --rocketpath $RKTBIN/rkt -o $OUTDIR/fedora.aci .`
+`$BACIBIN/baci --rocketpath $RKTBIN/rkt -o $OUTDIR/fedora.aci -n "example.com/fedora:21,os=linux,arch=amd64" .`
 
-Where:
+where:
 
 * `--rocketpath` is the path to the rkt executable
 * `-o or --outfile` is the output ACI filename
+* `-n or --name` is ACI name (and optional labels) in the same format used by rocket. For example: `example.com/postgres:9.3.6,os=linux,arch=amd64`
 
 If everything goes ok you'll find your aci in $OUTDIR/fedora.aci and you can run it with `$RKTBIN/rkt run $OUTDIR/fedora.aci` (as the exec cmd is `/bin/bash`, now it will just exit)
 
@@ -60,7 +61,7 @@ If everything goes ok you'll find your aci in $OUTDIR/fedora.aci and you can run
 ### Something more complex: fedora based postgresql
 `git clone https://github/docker-library/fedora-cloud`
 
-`$BACIBIN/baci --rocketpath $RKTBIN/rkt -o $OUTDIR/postgre.aci ./fedora-cloud/Fedora-Dockerfiles/postgres/`
+`$BACIBIN/baci --rocketpath $RKTBIN/rkt -o $OUTDIR/postgre.aci -n "example.com/postgres:9.3.6,os=linux,arch=amd64` ./fedora-cloud/Fedora-Dockerfiles/postgres/`
 
 When finished:
 
