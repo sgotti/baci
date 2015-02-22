@@ -1,0 +1,58 @@
+#!/bin/bash -e
+#
+# Run all baci tests
+# ./test
+# ./test -v
+#
+# Run tests for one package
+#
+# PKG=./cas ./test
+# PKG=cas ./test
+
+# Invoke ./cover for HTML output
+COVER=${COVER:-"-cover"}
+
+source ./build
+
+TESTABLE_AND_FORMATTABLE="baci builder"
+FORMATTABLE="$TESTABLE_AND_FORMATTABLE common helpers/sharedlibs"
+
+# user has not provided PKG override
+if [ -z "$PKG" ]; then
+        TEST=$TESTABLE_AND_FORMATTABLE
+        FMT=$FORMATTABLE
+
+# user has provided PKG override
+else
+        # strip out leading dotslashes and trailing slashes from PKG=./foo/
+        TEST=${PKG/#./}
+        TEST=${TEST/#\//}
+        TEST=${TEST/%\//}
+
+        # only run gofmt on packages provided by user
+        FMT="$TEST"
+fi
+
+# split TEST into an array and prepend REPO_PATH to each local package
+split=(${TEST// / })
+TEST=${split[@]/#/${REPO_PATH}/}
+
+echo "Running tests..."
+go test -timeout 60s ${COVER} $@ ${TEST} --race
+
+echo "Checking gofmt..."
+fmtRes=$(gofmt -l $FMT)
+if [ -n "${fmtRes}" ]; then
+        echo -e "gofmt checking failed:\n${fmtRes}"
+        exit 255
+fi
+
+echo "Checking govet..."
+vetRes=$(go vet $TEST)
+if [ -n "${vetRes}" ]; then
+        echo -e "govet checking failed:\n${vetRes}"
+        exit 255
+fi
+
+echo "Success"
+
