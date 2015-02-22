@@ -5,7 +5,7 @@ Baci is an ACI builder.
 ## How is it implemented?
 The build process is done inside the container (it's an ACI that builds other ACIs!).
 
-I'm not already sure if this was good choice but it was the easiest.
+I'm not already sure if this was a good choice but it was the easiest.
 Maybe in the future this can move from being an ACI to become an extension to the rocket stage1 or just an external program that uses rkt (this will need rocket to implement some additional features).
 
 By now some issues to deal with are known and other can arise:
@@ -48,6 +48,11 @@ Note: the build scripts tries to get a local copy of `xz` and the needed librari
 Right now baci needs to be run as root.
 
 `$BACIBIN/baci --rocketpath $RKTBIN/rkt -o $OUTDIR/fedora.aci .`
+
+Where:
+
+* `--rocketpath` is the path to the rkt executable
+* `-o or --outfile` is the output ACI filename
 
 If everything goes ok you'll find your aci in $OUTDIR/fedora.aci and you can run it with `$RKTBIN/rkt run $OUTDIR/fedora.aci` (as the exec cmd is `/bin/bash`, now it will just exit)
 
