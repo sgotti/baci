@@ -1,6 +1,6 @@
 package common
 
-import "github.com/appc/spec/schema/types"
+import "github.com/sgotti/baci/Godeps/_workspace/src/github.com/appc/spec/schema/types"
 
 // Configuration data provided by baci to the baci builder
 type ConfigData struct {

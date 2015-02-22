@@ -1,21 +1,30 @@
 #!/bin/bash -eu
 
-CURDIR=$(dirname $0)
+CURDIR=$(realpath $(dirname $0))
 
-# TODO(sgotti): vendor
-go get github.com/appc/spec/...
-go get github.com/sgotti/acibuilder
+ORG_PATH="github.com/sgotti"
+REPO_PATH="${ORG_PATH}/baci"
+                
+if [ ! -h ${CURDIR}/gopath/src/${REPO_PATH} ]; then
+        mkdir -p ${CURDIR}/gopath/src/${ORG_PATH}
+        ln -s ../../../.. ${CURDIR}/gopath/src/${REPO_PATH} || exit 255
+fi              
+                        
+export GOBIN=${CURDIR}/bin 
+export GOPATH=${CURDIR}/gopath
+                
+eval $(go env)          
 
 export GOBIN=${CURDIR}/bin
 
 echo "Building sharedlibs helper..."
-go build -o ${GOBIN}/sharedlibs ${CURDIR}/helpers/sharedlibs/
+go build -o ${GOBIN}/sharedlibs ${REPO_PATH}/helpers/sharedlibs
 RET=$?
 [ $RET -ne 0 ] && echo "build failed" && exit 1
 
 echo "Building bacibuilder..."
 BACIBUILDER=${GOBIN}/bacibuilder
-CGO_ENABLED=0 go build -o ${BACIBUILDER} -a -installsuffix cgo -ldflags '-extldflags "-static" -s' ${CURDIR}/builder/
+CGO_ENABLED=0 go build -o ${BACIBUILDER} -a -installsuffix cgo -ldflags '-extldflags "-static" -s' ${REPO_PATH}/builder
 RET=$?
 [ $RET -ne 0 ] && echo "build failed" && exit 1
 
@@ -27,7 +36,7 @@ else
 fi
 
 echo "Building baci..."
-CGO_ENABLED=0 go build -o ${GOBIN}/baci ${BACI_IMAGE:+-ldflags "-X main.defaultBaciImage '${BACI_IMAGE}'"} ${CURDIR}/baci/
+CGO_ENABLED=0 go build -o ${GOBIN}/baci ${BACI_IMAGE:+-ldflags "-X main.defaultBaciImage '${BACI_IMAGE}'"} ${REPO_PATH}/baci
 RET=$?
 [ $RET -ne 0 ] && echo "build failed" && exit 1
 
@@ -59,8 +68,9 @@ fi
 
 echo "Building actool..."
 ACTOOL=${GOBIN}/actool
-go build -o ${ACTOOL} github.com/appc/spec/actool
+go build -o ${ACTOOL} ${REPO_PATH}/Godeps/_workspace/src/github.com/appc/spec/actool
 
+echo "Creating the baci's ACI..."
 ${ACTOOL} build --overwrite ${CURDIR}/aci ${GOBIN}/baci.aci
 
 

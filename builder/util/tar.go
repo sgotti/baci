@@ -15,8 +15,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/appc/spec/aci"
-	ptar "github.com/sgotti/acido/pkg/tar"
+	"github.com/sgotti/baci/Godeps/_workspace/src/github.com/appc/spec/aci"
+	ptar "github.com/sgotti/baci/Godeps/_workspace/src/github.com/sgotti/acido/pkg/tar"
 )
 
 const (

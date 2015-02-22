@@ -16,9 +16,9 @@ import (
 	"github.com/sgotti/baci/builder/util"
 	"github.com/sgotti/baci/common"
 
-	"github.com/appc/spec/schema"
-	"github.com/appc/spec/schema/types"
-	"github.com/sgotti/acibuilder"
+	"github.com/sgotti/baci/Godeps/_workspace/src/github.com/appc/spec/schema"
+	"github.com/sgotti/baci/Godeps/_workspace/src/github.com/appc/spec/schema/types"
+	"github.com/sgotti/baci/Godeps/_workspace/src/github.com/sgotti/acibuilder"
 )
 
 const (

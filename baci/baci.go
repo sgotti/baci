@@ -25,13 +25,13 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/appc/spec/discovery"
-	"github.com/appc/spec/schema/types"
+	"github.com/sgotti/baci/Godeps/_workspace/src/github.com/appc/spec/discovery"
+	"github.com/sgotti/baci/Godeps/_workspace/src/github.com/appc/spec/schema/types"
 	"github.com/sgotti/baci/builder/docker"
 	"github.com/sgotti/baci/common"
 
-	"github.com/coreos/rocket/cas"
-	"github.com/jessevdk/go-flags"
+	"github.com/sgotti/baci/Godeps/_workspace/src/github.com/coreos/rocket/cas"
+	"github.com/sgotti/baci/Godeps/_workspace/src/github.com/jessevdk/go-flags"
 )
 
 var (

@@ -10,10 +10,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/appc/spec/schema/types"
+	"github.com/sgotti/baci/Godeps/_workspace/src/github.com/appc/spec/schema/types"
 	"github.com/sgotti/baci/builder/util"
 
-	"github.com/docker/docker/builder/parser"
+	"github.com/sgotti/baci/Godeps/_workspace/src/github.com/docker/docker/builder/parser"
 )
 
 const (
