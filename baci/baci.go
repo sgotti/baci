@@ -49,8 +49,8 @@ func init() {
 }
 
 var opts struct {
-	StoreDir      string `long:"rocketdir" description:"Cas store dir to use" default:"/var/lib/baci"`
-	RocketPath    string `long:"rocketpath" description:"Rocket executable path" required:"true"`
+	StoreDir      string `long:"storedir" description:"Cas store dir to use" default:"/var/lib/baci"`
+	RktPath       string `long:"rktpath" description:"Rocket executable path" required:"true"`
 	OutFilePath   string `short:"o" long:"outfile" description:"The filename of the generated ACI" required:"true"`
 	AppNameLabels string `short:"n" long:"name" description:"The ACI's name and labels in the format \"example.com/reduce-worker:1.0.2,os=linux,arch=amd64,anotherlabel=value\"" required:"true"`
 	Args          struct {
@@ -91,7 +91,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	rktPath := opts.RocketPath
+	rktPath := opts.RktPath
 	sourceDir, err := filepath.Abs(opts.Args.SourceDir)
 	if err != nil {
 		die("error: %v", err)
