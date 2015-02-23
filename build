@@ -35,13 +35,12 @@ fi
 echo "Building bacibuilder..."
 BACIBUILDER=${GOBIN}/bacibuilder
 LDFLAGS="-X github.com/sgotti/baci/builder/util.ldpath ${LDPATH}"
-
 # TODO(sgotti) not using 'go install' or 'go build -i' to avoid problems with
 # "-installsuffix" that will rebuild std libraries and can give permission
 # problems for go installation not owned by the current user (plus this will
 # fill systems dirs with build files). This means the the build should be faster
 # as, now, no object files are saved in the $GOPATH/pkg directory
-CGO_ENABLED=0 go build -o ${BACIBUILDER} -installsuffix cgo -ldflags "${LDFLAGS} --extldflags \"-static -s\" " ${REPO_PATH}/builder
+CGO_ENABLED=0 go build -o ${BACIBUILDER} -installsuffix cgo -ldflags "${LDFLAGS} --extldflags \"-static -s\" " ${REPO_PATH}/builder/bacibuilder
 RET=$?
 [ $RET -ne 0 ] && echo "build failed" && exit 1
 
