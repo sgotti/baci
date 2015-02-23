@@ -21,12 +21,6 @@ import (
 	"github.com/sgotti/baci/Godeps/_workspace/src/github.com/sgotti/acibuilder"
 )
 
-const (
-	BaciSourceDir = "/baci/source"
-	BaciDestDir   = "/baci/dest"
-	BaciDataDir   = "/baci/data"
-)
-
 var (
 	excludePaths = []*regexp.Regexp{
 		regexp.MustCompile("^dev/.+"),
@@ -149,7 +143,7 @@ func main() {
 	}
 	syscall.Umask(um)
 
-	configDataJson, err := ioutil.ReadFile(filepath.Join(BaciDataDir, "configdata"))
+	configDataJson, err := ioutil.ReadFile(filepath.Join(common.BaciDataDir, "configdata"))
 	if err != nil {
 		die("cannot read the configdata file: %v", err)
 	}
@@ -166,9 +160,9 @@ func main() {
 	} else {
 		root = "/"
 	}
-	sourceDir := filepath.Join(root, BaciSourceDir)
+	sourceDir := filepath.Join(root, common.BaciSourceDir)
 
-	baseACIPath := filepath.Join(BaciDataDir, "base.aci")
+	baseACIPath := filepath.Join(common.BaciDataDir, "base.aci")
 	if _, err := os.Stat(baseACIPath); err == nil {
 		log.Printf("Extracting base aci\n")
 		r, err := os.Open(baseACIPath)
@@ -195,7 +189,7 @@ func main() {
 	}
 
 	log.Printf("Building the ACI...")
-	err = BuildACI(root, filepath.Join(BaciDestDir, configData.OutFile), &configData, builder)
+	err = BuildACI(root, filepath.Join(common.BaciDestDir, configData.OutFile), &configData, builder)
 	if err != nil {
 		die("error: %v", err)
 	}

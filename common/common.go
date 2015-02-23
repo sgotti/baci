@@ -8,3 +8,10 @@ type ConfigData struct {
 	AppName types.ACName
 	Labels  types.Labels
 }
+
+const (
+	BaciSourceDir = "/baci/source"
+	BaciDestDir   = "/baci/dest"
+	BaciDataDir   = "/baci/data"
+	BaciRootDir   = "/baci/root"
+)

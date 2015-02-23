@@ -62,6 +62,7 @@ mkdir -p ${BACIDIR}/dest
 mkdir -p ${BACIDIR}/data
 
 mkdir -p ${BACIROOT}/usr/bin
+mkdir -p ${BACIROOT}/lib
 
 cp ${CURDIR}/manifest ${BACIACI}
 cp ${BACIBUILDER} ${BACIROOT}/usr/bin
@@ -69,8 +70,7 @@ cp ${BACIBUILDER} ${BACIROOT}/usr/bin
 if [ -n $XZ ]; then
 	cp $XZ ${BACIROOT}/usr/bin/
 	for lib in ${XZ_SHAREDLIBS}; do
-		mkdir -p ${BACIROOT}/$(dirname ${lib})
-		cp $lib ${BACIROOT}/$lib
+		cp $lib ${BACIROOT}/lib/
 	done
 	mkdir -p ${BACIROOT}/$(dirname ${LDPATH})
 	cp $LDPATH ${BACIROOT}/$LDPATH

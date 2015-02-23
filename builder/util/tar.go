@@ -16,16 +16,21 @@ import (
 	"syscall"
 
 	"github.com/sgotti/baci/Godeps/_workspace/src/github.com/appc/spec/aci"
+	"github.com/sgotti/baci/common"
+
 	ptar "github.com/sgotti/baci/Godeps/_workspace/src/github.com/sgotti/acido/pkg/tar"
 )
 
 var (
 	ldpath string
-	xzPath = "/baci/root/usr/bin/xz"
+	xzPath = filepath.Join(common.BaciRootDir, "/usr/bin/xz")
 )
 
 var (
-	baciRootEnv = []string{"PATH=/baci/root/usr/bin", "LD_LIBRARY_PATH=/baci/root/lib64"}
+	// lib/ contains the xz needed libs, it's named just lib as the host's
+	// libs can be placed in different places (/lib64 on fedora,
+	// /lib/x86_64-linux-gnu/ on debian/ubuntu etc...)
+	baciRootEnv = []string{"PATH=" + filepath.Join(common.BaciRootDir, "usr/bin"), "LD_LIBRARY_PATH=" + filepath.Join(common.BaciRootDir, "lib")}
 )
 
 func init() {
@@ -64,7 +69,7 @@ func decompress(rs io.Reader, typ aci.FileType) (io.Reader, error) {
 // compression format
 func xzReader(r io.Reader) io.ReadCloser {
 	rpipe, wpipe := io.Pipe()
-	cmd := exec.Command(filepath.Join("/baci/root", ldpath), xzPath, "--decompress", "--stdout")
+	cmd := exec.Command(filepath.Join(common.BaciRootDir, ldpath), xzPath, "--decompress", "--stdout")
 	cmd.Stdin = r
 	cmd.Stdout = wpipe
 	cmd.Env = baciRootEnv
