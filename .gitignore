@@ -4,6 +4,6 @@
 Session.vim
 .netrwhist
 *~
-./bin/
-./aci/
-./gopath/
+/bin/
+/aci/
+/gopath/

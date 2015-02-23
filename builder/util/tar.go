@@ -19,15 +19,18 @@ import (
 	ptar "github.com/sgotti/baci/Godeps/_workspace/src/github.com/sgotti/acido/pkg/tar"
 )
 
-const (
-	ldlinux = "/baci/root/lib64/ld-linux-x86-64.so.2"
-	xzPath  = "/baci/root/usr/bin/xz"
+var (
+	ldpath string
+	xzPath = "/baci/root/usr/bin/xz"
 )
 
 var (
 	baciRootEnv = []string{"PATH=/baci/root/usr/bin", "LD_LIBRARY_PATH=/baci/root/lib64"}
 )
 
+func init() {
+
+}
 func decompress(rs io.Reader, typ aci.FileType) (io.Reader, error) {
 	var (
 		dr  io.Reader
@@ -42,6 +45,9 @@ func decompress(rs io.Reader, typ aci.FileType) (io.Reader, error) {
 	case aci.TypeBzip2:
 		dr = bzip2.NewReader(rs)
 	case aci.TypeXz:
+		if ldpath == "" {
+			return nil, fmt.Errorf("ld.so path not defined. Cannot extract xz files.")
+		}
 		dr = xzReader(rs)
 	case aci.TypeTar:
 		dr = rs
@@ -58,7 +64,7 @@ func decompress(rs io.Reader, typ aci.FileType) (io.Reader, error) {
 // compression format
 func xzReader(r io.Reader) io.ReadCloser {
 	rpipe, wpipe := io.Pipe()
-	cmd := exec.Command(ldlinux, xzPath, "--decompress", "--stdout")
+	cmd := exec.Command(filepath.Join("/baci/root", ldpath), xzPath, "--decompress", "--stdout")
 	cmd.Stdin = r
 	cmd.Stdout = wpipe
 	cmd.Env = baciRootEnv
