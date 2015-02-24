@@ -100,6 +100,12 @@ func BuildACI(root string, destfile string, configData *common.ConfigData, b Bui
 	if err != nil {
 		return err
 	}
+
+	mountPoints, err := b.GetMountPoints()
+	if err != nil {
+		return err
+	}
+
 	maintainer, err := b.GetMaintainer()
 	if err != nil {
 		return err
@@ -122,6 +128,7 @@ func BuildACI(root string, destfile string, configData *common.ConfigData, b Bui
 		Environment:      environment,
 		WorkingDirectory: workDir,
 		Ports:            ports,
+		MountPoints:      mountPoints,
 	}
 
 	im := schema.ImageManifest{
