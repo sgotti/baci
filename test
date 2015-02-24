@@ -14,7 +14,7 @@ COVER=${COVER:-"-cover"}
 
 source ./build
 
-TESTABLE_AND_FORMATTABLE="builder/bacibuilder"
+TESTABLE_AND_FORMATTABLE="builder/bacibuilder builder/docker"
 FORMATTABLE="$TESTABLE_AND_FORMATTABLE baci common builder/docker builder/util helpers/sharedlibs"
 
 # user has not provided PKG override
