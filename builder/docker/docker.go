@@ -101,6 +101,20 @@ func (b *DockerBuilder) GetEnv() map[string]string {
 	return b.env
 }
 
+func (b *DockerBuilder) GetMaintainer() (string, error) {
+	for _, n := range b.node.Children {
+		if n.Value == "maintainer" {
+			n := n.Next
+			if n == nil {
+				return "", fmt.Errorf("missing parameter")
+			}
+			return n.Value, nil
+		}
+	}
+	return "", nil
+
+}
+
 func makeEnvString(env map[string]string) []string {
 	envString := []string{}
 	for k, v := range env {

@@ -46,6 +46,7 @@ type Builder interface {
 	GetEnv() map[string]string
 	GetWorkDir() string
 	GetPorts() ([]types.Port, error)
+	GetMaintainer() (string, error)
 }
 
 func NewExcludeFunc(exclude []*regexp.Regexp) acibuilder.ExcludeFunc {
