@@ -92,6 +92,7 @@ func (b *DockerBuilder) GetPorts() ([]types.Port, error) {
 				return nil, err
 			}
 			b.ports = append(b.ports, types.Port{Name: *portName, Protocol: "tcp", Port: uint(port)})
+			count++
 		}
 	}
 	return b.ports, nil
