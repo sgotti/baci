@@ -21,6 +21,10 @@ import (
 	"github.com/sgotti/baci/Godeps/_workspace/src/github.com/sgotti/acibuilder"
 )
 
+const (
+	authorAnnotation = "author"
+)
+
 var (
 	excludePaths = []*regexp.Regexp{
 		regexp.MustCompile("^dev/.+"),
@@ -95,11 +99,21 @@ func BuildACI(root string, destfile string, configData *common.ConfigData, b Bui
 	if err != nil {
 		return err
 	}
-
+	maintainer, err := b.GetMaintainer()
+	if err != nil {
+		return err
+	}
 	environment := types.Environment{}
 	for k, v := range env {
 		environment.Set(k, v)
 	}
+
+	annotations := &types.Annotations{}
+	// Add an "author" annotation if maintainers isn't empty
+	if maintainer != "" {
+		annotations.Set(authorAnnotation, maintainer)
+	}
+
 	app := &types.App{
 		Exec:             exec,
 		User:             user,
@@ -110,11 +124,12 @@ func BuildACI(root string, destfile string, configData *common.ConfigData, b Bui
 	}
 
 	im := schema.ImageManifest{
-		ACKind:    types.ACKind("ImageManifest"),
-		ACVersion: schema.AppContainerVersion,
-		Name:      configData.AppName,
-		Labels:    configData.Labels,
-		App:       app,
+		ACKind:      types.ACKind("ImageManifest"),
+		ACVersion:   schema.AppContainerVersion,
+		Name:        configData.AppName,
+		Labels:      configData.Labels,
+		App:         app,
+		Annotations: *annotations,
 	}
 
 	err = aciBuilder.Build(im, fh)
