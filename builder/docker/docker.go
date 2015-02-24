@@ -98,6 +98,34 @@ func (b *DockerBuilder) GetPorts() ([]types.Port, error) {
 	return b.ports, nil
 }
 
+func (b *DockerBuilder) GetMountPoints() ([]types.MountPoint, error) {
+	volumes := []string{}
+	seen := make(map[string]struct{})
+	for _, n := range b.node.Children {
+		if n.Value == "volume" {
+			for p := n.Next; p != nil; p = p.Next {
+				// Ignore duplicated volumes
+				if _, ok := seen[p.Value]; !ok {
+					volumes = append(volumes, p.Value)
+					seen[p.Value] = struct{}{}
+				}
+			}
+		}
+	}
+
+	count := 0
+	mountPoints := []types.MountPoint{}
+	for _, v := range volumes {
+		name, err := types.NewACName(fmt.Sprintf("volume%d", count))
+		if err != nil {
+			return nil, err
+		}
+		mountPoints = append(mountPoints, types.MountPoint{Name: *name, Path: v, ReadOnly: false})
+		count++
+	}
+	return mountPoints, nil
+}
+
 func (b *DockerBuilder) GetEnv() map[string]string {
 	return b.env
 }
@@ -343,6 +371,7 @@ func (b *DockerBuilder) Build() error {
 		"from":       nil,
 		"maintainer": nil,
 		"expose":     nil,
+		"volume":     nil,
 		"workdir":    b.SetWorkDir,
 		"add":        b.Add,
 		"copy":       b.Add, // TODO(sgotti) now COPY is handled like ADD.
