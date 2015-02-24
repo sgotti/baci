@@ -50,6 +50,7 @@ type Builder interface {
 	GetEnv() map[string]string
 	GetWorkDir() string
 	GetPorts() ([]types.Port, error)
+	GetMountPoints() ([]types.MountPoint, error)
 	GetMaintainer() (string, error)
 }
 
