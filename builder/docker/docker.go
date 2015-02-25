@@ -21,15 +21,18 @@ const (
 )
 
 type DockerBuilder struct {
-	root      string
-	sourceDir string
-	workDir   string
-	node      *parser.Node
-	cmd       []string
-	user      string
-	group     string
-	env       map[string]string
-	ports     []types.Port
+	root               string
+	sourceDir          string
+	workDir            string
+	node               *parser.Node
+	cmd                []string
+	cmdExecForm        bool
+	entrypoint         []string
+	entrypointExecForm bool
+	user               string
+	group              string
+	env                map[string]string
+	ports              []types.Port
 }
 
 func NewDockerBuilder(root string, sourceDir string) (*DockerBuilder, error) {
@@ -58,8 +61,43 @@ func (b *DockerBuilder) GetBaseImage() (string, error) {
 	return "", nil
 }
 
-func (b *DockerBuilder) GetExec() []string {
-	return b.cmd
+func (b *DockerBuilder) GetExec() ([]string, error) {
+	for _, n := range b.node.Children {
+		var err error
+		switch n.Value {
+		case "cmd":
+			b.cmd, b.cmdExecForm, err = b.parseCommand(n)
+			if err != nil {
+				return nil, err
+			}
+		case "entrypoint":
+			b.entrypoint, b.entrypointExecForm, err = b.parseCommand(n)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	args := []string{}
+	if len(b.entrypoint) > 0 {
+		if b.entrypointExecForm {
+			// Exec form. Append cmd as additional arguments to entrypoint
+			args = append(b.entrypoint, b.cmd...)
+		} else {
+			// Shell form. Ignore cmd.
+			args = append([]string{"/bin/sh", "-c"}, b.entrypoint...)
+		}
+	} else {
+		// Use cmd
+		if b.cmdExecForm {
+			// Exec form.
+			args = b.cmd
+		} else {
+			// Shell form.
+			args = append([]string{"/bin/sh", "-c"}, b.cmd...)
+		}
+	}
+	return args, nil
 }
 
 func (b *DockerBuilder) GetUser() string {
@@ -191,26 +229,22 @@ func (b *DockerBuilder) replaceEnv(str string) string {
 	return str
 }
 
-func (b *DockerBuilder) Cmd(node *parser.Node) error {
-	params := []string{}
-	for p := node.Next; p != nil; p = p.Next {
-		params = append(params, p.Value)
-	}
-
+func (b *DockerBuilder) parseCommand(node *parser.Node) ([]string, bool, error) {
 	args := []string{}
-	if len(params) == 0 {
-		return fmt.Errorf("missing parameters")
-	}
-	if node.Attributes != nil && node.Attributes["json"] {
-		// Exec form
-		args = params
-	} else {
-		args = append([]string{"/bin/sh", "-c"}, params[0])
+	for p := node.Next; p != nil; p = p.Next {
+		args = append(args, p.Value)
 	}
 
-	b.cmd = args
-	return nil
+	if len(args) == 0 {
+		return nil, false, fmt.Errorf("missing arguments")
+	}
+	execForm := false
+	if node.Attributes != nil && node.Attributes["json"] {
+		execForm = true
+	}
+	return args, execForm, nil
 }
+
 func (b *DockerBuilder) Run(node *parser.Node) error {
 	params := []string{}
 	for p := node.Next; p != nil; p = p.Next {
@@ -372,18 +406,17 @@ func (b *DockerBuilder) Build() error {
 		"maintainer": nil,
 		"expose":     nil,
 		"volume":     nil,
+		"cmd":        nil,
+		"entrypoint": nil,
 		"workdir":    b.SetWorkDir,
 		"add":        b.Add,
 		"copy":       b.Add, // TODO(sgotti) now COPY is handled like ADD.
-		"cmd":        b.Cmd,
 		"run":        b.Run,
 		"env":        b.Env,
 		"user":       b.User,
 	}
 
 	// TODO(sgotti) handle:
-	// ENTRYPOINT
-	// VOLUME
 	// ONBUILD (how???)
 	for _, n := range b.node.Children {
 		command := n.Value

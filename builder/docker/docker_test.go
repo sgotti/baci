@@ -80,3 +80,65 @@ func TestGetMountPoints(t *testing.T) {
 		}
 	}
 }
+
+func TestGetExec(t *testing.T) {
+	dir, err := ioutil.TempDir("", tstprefix)
+	if err != nil {
+		t.Fatalf("error creating tempdir: %v", err)
+	}
+	defer os.RemoveAll(dir)
+
+	tests := []struct {
+		dockerfile string
+		expected   []string
+	}{
+		{
+			`
+			CMD [ "/bin/ls" ]
+			`,
+			[]string{"/bin/ls"},
+		},
+		{
+			`
+			CMD /bin/ls
+			`,
+			[]string{"/bin/sh", "-c", "/bin/ls"},
+		},
+		{
+			`
+			CMD /bin/ls "file01"
+			`,
+			[]string{"/bin/sh", "-c", `/bin/ls "file01"`},
+		},
+		{
+			`
+			ENTRYPOINT ["top", "-b"]
+			CMD [ "-c" ]
+			`,
+			[]string{"top", "-b", "-c"},
+		},
+		{
+			`
+			ENTRYPOINT top -b
+			CMD [ "-c" ]
+			`,
+			[]string{"/bin/sh", "-c", "top -b"},
+		},
+	}
+
+	for _, tt := range tests {
+		ioutil.WriteFile(filepath.Join(dir, "Dockerfile"), []byte(tt.dockerfile), 0644)
+
+		builder, err := NewDockerBuilder("", dir)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		exec, err := builder.GetExec()
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !reflect.DeepEqual(tt.expected, exec) {
+			t.Errorf("wrong exec, want: %#v, got: %#v", tt.expected, exec)
+		}
+	}
+}

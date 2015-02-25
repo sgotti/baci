@@ -46,7 +46,7 @@ func die(s string, i ...interface{}) {
 type Builder interface {
 	Build() error
 	GetBaseImage() (string, error)
-	GetExec() []string
+	GetExec() ([]string, error)
 	GetUser() string
 	GetGroup() string
 	GetEnv() map[string]string
@@ -83,7 +83,10 @@ func BuildACI(root string, destfile string, configData *common.ConfigData, b Bui
 	// TODO(sgotti) as a shell cannot be executed by rocket (as it's runned
 	// inside a systemd unit and it will exit), replace it with something
 	// else?
-	exec := b.GetExec()
+	exec, err := b.GetExec()
+	if err != nil {
+		return err
+	}
 	if len(exec) == 0 {
 		// Set a default exec
 		exec = []string{"/bin/bash"}
