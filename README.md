@@ -1,5 +1,7 @@
 # Baci - Build an ACI.
 
+[![Build Status](https://travis-ci.org/sgotti/baci.svg?branch=master)](https://travis-ci.org/sgotti/baci)
+
 Baci is an ACI builder. See the [App Container Specification](https://github.com/appc/spec).
 
 ## How is it implemented?
