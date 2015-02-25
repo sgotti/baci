@@ -21,6 +21,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -182,6 +184,9 @@ func main() {
 		die("error: %v", err)
 	}
 
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt, os.Kill)
+
 	sourceVol := fmt.Sprintf("-volume=source,kind=host,source=%s", sourceDir)
 	dataVol := fmt.Sprintf("-volume=data,kind=host,source=%s", dataDir)
 	destVol := fmt.Sprintf("-volume=dest,kind=host,source=%s", outDir)
@@ -189,8 +194,35 @@ func main() {
 	cmdArgs := append([]string{rktPath}, "run")
 	cmdArgs = append(cmdArgs, volumesArgs...)
 	cmdArgs = append(cmdArgs, defaultBaciImage)
-	if err := syscall.Exec(cmdArgs[0], cmdArgs, os.Environ()); err != nil {
-		log.Fatalf("error execing init: %v", err)
+	cmd := exec.Cmd{
+		Env:    os.Environ(),
+		Path:   cmdArgs[0],
+		Args:   cmdArgs,
+		Stderr: os.Stderr,
+		Stdout: os.Stdout,
+	}
+	if err := cmd.Start(); err != nil {
+		log.Fatalf("Error starting the Builder container: %v", err)
+	}
+
+	builderChan := make(chan error)
+	go func() {
+		builderChan <- cmd.Wait()
+	}()
+
+	for {
+		select {
+		case err := <-builderChan:
+			if err != nil {
+				log.Fatalf("Builder container exited with error: %v", err)
+			}
+			log.Printf("Builder container finished.")
+			os.Exit(0)
+
+		case sig := <-signalChan:
+			log.Printf("Signal %v received", sig)
+			cmd.Process.Signal(syscall.SIGKILL)
+		}
 	}
 
 }
