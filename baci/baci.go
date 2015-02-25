@@ -17,9 +17,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
+	"net"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -129,39 +129,18 @@ func main() {
 
 	log.Printf("baseImage: %s\n", baseImage)
 
+	var basekey string
 	if baseImage != "" && baseImage != "scratch" {
-		baseACIPath := filepath.Join(dataDir, "base.aci")
-
 		ds, err := cas.NewStore(opts.StoreDir)
 		if err != nil {
 			die("error: %v", err)
 		}
-
 		url := fmt.Sprintf("docker://%s", baseImage)
-
-		key, err := downloadImage(url, ds)
+		basekey, err = downloadImage(url, ds)
 		if err != nil {
 			die("error: %v", err)
 		}
-
-		log.Printf("image downloaded")
-		r, err := ds.ReadStream(key)
-		if err != nil {
-			die("error: %v", err)
-		}
-		defer r.Close()
-
-		mode := os.O_CREATE | os.O_WRONLY | os.O_TRUNC
-		fh, err := os.OpenFile(baseACIPath, mode, 0644)
-		if err != nil {
-			die("error: %v", err)
-		}
-		defer fh.Close()
-		_, err = io.Copy(fh, r)
-		if err != nil {
-			die("error: %v", err)
-		}
-		log.Printf("image written to %s", baseACIPath)
+		log.Printf("base image downloaded")
 	}
 
 	// Write config data for the baci builder
@@ -173,16 +152,25 @@ func main() {
 		}
 		labels = append(labels, types.Label{Name: *name, Value: v})
 	}
+
 	configData := &common.ConfigData{
 		OutFile: outFile,
 		AppName: App.Name,
 		Labels:  labels,
+	}
+	if basekey != "" {
+		configData.HasBase = true
 	}
 	configDataJson, err := json.Marshal(configData)
 	err = ioutil.WriteFile(filepath.Join(dataDir, "configdata"), []byte(configDataJson), 0644)
 	if err != nil {
 		die("error: %v", err)
 	}
+
+	socketPath := filepath.Join(dataDir, common.BaciSocket)
+	listener, err := net.Listen("unix", socketPath)
+	httpserverChan := make(chan error)
+	go startHttpServer(listener, basekey, httpserverChan)
 
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt, os.Kill)
@@ -221,6 +209,10 @@ func main() {
 
 		case sig := <-signalChan:
 			log.Printf("Signal %v received", sig)
+			cmd.Process.Signal(syscall.SIGKILL)
+
+		case err := <-httpserverChan:
+			log.Printf("Http server error: %v. Exiting.", err)
 			cmd.Process.Signal(syscall.SIGKILL)
 		}
 	}

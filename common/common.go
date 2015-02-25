@@ -5,6 +5,7 @@ import "github.com/sgotti/baci/Godeps/_workspace/src/github.com/appc/spec/schema
 // Configuration data provided by baci to the baci builder
 type ConfigData struct {
 	OutFile string
+	HasBase bool
 	AppName types.ACName
 	Labels  types.Labels
 }
@@ -14,4 +15,6 @@ const (
 	BaciDestDir   = "/baci/dest"
 	BaciDataDir   = "/baci/data"
 	BaciRootDir   = "/baci/root"
+
+	BaciSocket = "baci.socket"
 )

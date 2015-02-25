@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -186,22 +188,30 @@ func main() {
 	}
 	sourceDir := filepath.Join(root, common.BaciSourceDir)
 
-	baseACIPath := filepath.Join(common.BaciDataDir, "base.aci")
-	if _, err := os.Stat(baseACIPath); err == nil {
-		log.Printf("Extracting base aci\n")
-		r, err := os.Open(baseACIPath)
-		if err != nil {
-			die("cannot open source file: %v", err)
+	if configData.HasBase {
+		log.Printf("Extracting the base ACI")
+		transport := &http.Transport{
+			Dial: func(proto, addr string) (conn net.Conn, err error) {
+				return net.Dial("unix", filepath.Join(common.BaciDataDir, common.BaciSocket))
+			},
 		}
-		tr := tar.NewReader(r)
+		client := &http.Client{Transport: transport}
+		// http://127.0.0.1 is ignored as the transport is a unix socket
+		r, err := client.Get("http://127.0.0.1/aci")
+		if err != nil {
+			die("cannot download base ACI: %v", err)
+		}
+		if r.StatusCode != http.StatusOK {
+			die("cannot download base ACI, http status: %d", r.StatusCode)
+		}
+		defer r.Body.Close()
+
+		tr := tar.NewReader(r.Body)
 		err = util.ExtractTarRootFS(tr, root, true)
 		if err != nil {
 			die("error extracting tar: %v", err)
 		}
 	}
-
-	// Remove base.aci
-	os.Remove(baseACIPath)
 
 	builder, err := docker.NewDockerBuilder(root, sourceDir)
 	if err != nil {
