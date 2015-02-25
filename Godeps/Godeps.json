@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/sgotti/baci",
-	"GoVersion": "go1.3.3",
+	"GoVersion": "go1.4.2",
 	"Packages": [
 		"./..."
 	],
@@ -117,7 +117,7 @@
 		},
 		{
 			"ImportPath": "github.com/sgotti/acibuilder",
-			"Rev": "99123c001c5ae028344f179f074f35aa21b2d5ba"
+			"Rev": "19a5934bfbd5c20edabc433bcdb5c24ec0d1c33e"
 		},
 		{
 			"ImportPath": "github.com/sgotti/acido/pkg/tar",

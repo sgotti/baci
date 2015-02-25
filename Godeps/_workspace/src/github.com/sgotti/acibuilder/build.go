@@ -23,7 +23,8 @@ func BuildWalker(root string, files map[string]struct{}, excludeFunc ExcludeFunc
 	inos := map[uint64]string{}
 	return func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return err
+			// Ignore Walk errors
+			return nil
 		}
 
 		if files != nil {
