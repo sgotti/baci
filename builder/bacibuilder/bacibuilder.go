@@ -91,6 +91,16 @@ func BuildACI(root string, destfile string, configData *common.ConfigData, b Bui
 		// Set a default exec
 		exec = []string{"/bin/bash"}
 	}
+	// appc SPEC requires executables to be absolute path.
+	// Try to lookup it.
+	fp, err := util.GetFullPath(exec[0], common.DefaultPathEnv)
+	if err == nil {
+		exec[0] = fp
+	} else {
+		//Fallback to "/bin/sh -c command"
+		exec = append([]string{"/bin/sh", "-c"}, strings.Join(exec, " "))
+	}
+
 	user := b.GetUser()
 	if user == "" {
 		user = "0"

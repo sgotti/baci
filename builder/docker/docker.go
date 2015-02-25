@@ -12,12 +12,9 @@ import (
 
 	"github.com/sgotti/baci/Godeps/_workspace/src/github.com/appc/spec/schema/types"
 	"github.com/sgotti/baci/builder/util"
+	"github.com/sgotti/baci/common"
 
 	"github.com/sgotti/baci/Godeps/_workspace/src/github.com/docker/docker/builder/parser"
-)
-
-const (
-	defaultPathEnv = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 )
 
 type DockerBuilder struct {
@@ -262,7 +259,7 @@ func (b *DockerBuilder) Run(node *parser.Node) error {
 		args = append([]string{"/bin/sh", "-c"}, params[0])
 	}
 
-	env := append([]string{"PATH=" + defaultPathEnv}, makeEnvString(b.env)...)
+	env := append([]string{"PATH=" + common.DefaultPathEnv}, makeEnvString(b.env)...)
 	cmd := exec.Cmd{
 		Env:    env,
 		Dir:    b.workDir,

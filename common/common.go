@@ -17,4 +17,6 @@ const (
 	BaciRootDir   = "/baci/root"
 
 	BaciSocket = "baci.socket"
+
+	DefaultPathEnv = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 )
